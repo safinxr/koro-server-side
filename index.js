@@ -31,6 +31,19 @@ async function run() {
         const allUsers = client.db("koroDB").collection("allUsers");
 
         // USER DB========================================= USER DB //
+        app.get('/user', async (req, res) => {
+            try {
+                const email = req.query.email
+                const query = { email: email };
+                const result = await allUsers.findOne(query);
+                res.send(result)
+
+            }
+            catch (err) {
+                console.error(err);
+                res.status(400).send('An error occurred while fetching');
+            }
+        })
 
         app.post('/users', async(req, res) =>{
             try {
@@ -52,6 +65,8 @@ async function run() {
                 res.status(400).send('An error occurred while Posting');
             }
         })
+
+        
 
 
 
