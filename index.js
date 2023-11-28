@@ -69,6 +69,21 @@ async function run() {
 
 
         // BOOKED PARCEL==============================
+        app.get('/bookedparcel', async (req, res) => {
+            try {
+                const email = req.query.email
+                const query = { email: email };
+                const result = await bookedParcel.find(query).toArray()
+                res.send(result)
+
+            }
+            catch (err) {
+                console.error(err);
+                res.status(400).send('An error occurred while fetching');
+            }
+        })
+
+
         app.post('/bookedparcel', async (req, res) => {
             try {
                 const data = req.body;
@@ -91,7 +106,6 @@ run().catch(console.dir);
 
 
 app.get('/', (req, res) => {
-    console.log(alu);
     res.send("KORO Running")
 })
 
