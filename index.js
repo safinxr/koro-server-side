@@ -69,6 +69,17 @@ async function run() {
 
 
         // BOOKED PARCEL==============================
+        app.get('/allparcel', async (req, res) => {
+            try {                
+                const result = await bookedParcel.find().toArray()
+                res.send(result)
+            }
+            catch (err) {
+                console.error(err);
+                res.status(400).send('An error occurred while fetching');
+            }
+        })
+
         app.get('/bookedparcel', async (req, res) => {
             try {
                 const email = req.query.email
