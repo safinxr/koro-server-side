@@ -29,6 +29,7 @@ async function run() {
         await client.connect();
 
         const allUsers = client.db("koroDB").collection("allUsers");
+        const bookedParcel = client.db("koroDB").collection("bookedParcel");
 
         // USER DB========================================= USER DB //
         app.get('/user', async (req, res) => {
@@ -45,7 +46,7 @@ async function run() {
             }
         })
 
-        app.post('/users', async(req, res) =>{
+        app.post('/users', async (req, res) => {
             try {
                 const data = req.body;
                 data.user_type = "user"
@@ -66,8 +67,19 @@ async function run() {
             }
         })
 
-        
 
+        // BOOKED PARCEL==============================
+        app.post('/bookedparcel', async (req, res) => {
+            try {
+                const data = req.body;
+                const result = await bookedParcel.insertOne(data);
+                res.send(result);
+            }
+            catch (err) {
+                console.error(err);
+                res.status(400).send('An error occurred while Posting');
+            }
+        })
 
 
         console.log("Koro connected to mongodb✅✅✅✅✅✅✅✅");
