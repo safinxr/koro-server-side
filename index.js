@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors')
 require('dotenv').config()
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const port = process.env.PORT || 5000
 
@@ -83,6 +83,40 @@ async function run() {
             }
         })
 
+        app.get('/singleparcel', async (req, res) => {
+            try {
+                const id = req.query.id
+                const result = await bookedParcel.findOne({ _id: new ObjectId(id) })
+                res.send(result);
+
+            }
+            catch (err) {
+                console.error(err);
+                res.status(400).send('An error occurred while fetching');
+            }
+
+        })
+
+        app.put('/bookedparcel', async (req, res) => {
+            try {
+                const id = req.query.id
+                const data = req.body
+                const filter = { _id: new ObjectId(id) };
+                const newData = {
+                    $set: data
+                };
+                const result = await bookedParcel.updateOne(filter, newData);
+                res.send(result);
+
+            }
+            catch (err) {
+                console.error(err);
+                res.status(400).send('An error occurred while updating');
+            }
+
+        })
+        
+
 
         app.post('/bookedparcel', async (req, res) => {
             try {
@@ -94,6 +128,20 @@ async function run() {
                 console.error(err);
                 res.status(400).send('An error occurred while Posting');
             }
+        })
+
+        app.delete('/bookedparcel', async (req, res) => {
+            try {
+                const id = req.query.id
+                const result = await bookedParcel.deleteOne({ _id: new ObjectId(id) })
+                res.send(result);
+
+            }
+            catch (err) {
+                console.error(err);
+                res.status(400).send('An error occurred while deleting');
+            }
+
         })
 
 
