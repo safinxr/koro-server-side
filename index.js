@@ -12,7 +12,7 @@ const port = process.env.PORT || 5000
 app.use(express.json())
 app.use(cookieParser())
 app.use(cors({
-    origin: ["https://koro-ebb34.web.app"],
+    origin: ["http://localhost:5173"],
     credentials: true
 }));
 
@@ -100,6 +100,18 @@ async function run() {
                 res.status(400).send('An error occurred while fetching');
             }
         })
+        app.get('/alluserscount', async (req, res) => {
+            try {
+                const result = await allUsers.find().toArray()
+                const count = result.length
+                res.send({ count });
+
+            }
+            catch (err) {
+                console.error(err);
+                res.status(400).send('An error occurred while fetching');
+            }
+        })
 
         app.get('/alldeliveryman', verifyToken, verifyAdmin, async (req, res) => {
             try {
@@ -176,6 +188,19 @@ async function run() {
                 }
                 const result = await bookedParcel.find().toArray()
                 res.send(result)
+            }
+            catch (err) {
+                console.error(err);
+                res.status(400).send('An error occurred while fetching');
+            }
+        })
+
+        app.get('/allparcelcount', async (req, res) => {
+            try {
+                const result = await bookedParcel.find().toArray()
+                const count = result.length
+                res.send({ count });
+
             }
             catch (err) {
                 console.error(err);
