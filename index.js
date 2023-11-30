@@ -1,13 +1,22 @@
 const express = require('express');
 const cors = require('cors')
+const jwt = require('jsonwebtoken')
+const cookieParser = require('cookie-parser')
 require('dotenv').config()
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const port = process.env.PORT || 5000
 
 // Middleware
-app.use(cors())
+
 app.use(express.json())
+app.use(cookieParser())
+app.use(cors({
+    origin: ["https://koro-ebb34.web.app"],
+    credentials: true
+}));
+
+
 
 
 
@@ -31,6 +40,35 @@ async function run() {
         const allUsers = client.db("koroDB").collection("allUsers");
         const bookedParcel = client.db("koroDB").collection("bookedParcel");
 
+        // Middleware======================
+        const verifyToken = (req, res, next) => {
+            const token = req?.cookies?.token
+            if (!token) {
+                return res.status(401).send({ message: "NO token" })
+            }
+
+            jwt.verify(token, process.env.ACCESS_TOKEN, (err, decode) => {
+                if (err) {
+                    return res.status(401).send({ message: "Unable to decode " })
+                }
+                req.user = decode.email
+            })
+            next()
+        }
+
+        const verifyAdmin = async (req, res, next) => {
+            const email = req.user;
+            const query = { email: email };
+            const user = await allUsers.findOne(query);
+            const isAdmin = user?.user_type === 'admin';
+            if (!isAdmin) {
+                return res.status(403).send({ message: 'forbidden access' });
+            }
+            next();
+        }
+
+
+
         // USER DB========================================= USER DB //
         app.get('/user', async (req, res) => {
             try {
@@ -46,9 +84,13 @@ async function run() {
             }
         })
 
-        app.get('/allusers', async (req, res) => {
+        app.get('/allusers', verifyToken, verifyAdmin, async (req, res) => {
             try {
-                const email = req.query.email                
+                const tokenUser = req.user
+                const email = req.query.email
+                if (tokenUser !== email) {
+                    return res.send("donst match user")
+                }
                 const result = await allUsers.find().toArray()
                 res.send(result)
 
@@ -59,10 +101,14 @@ async function run() {
             }
         })
 
-        app.get('/alldeliveryman', async (req, res) => {
+        app.get('/alldeliveryman', verifyToken, verifyAdmin, async (req, res) => {
             try {
+                const tokenUser = req.user
                 const email = req.query.email
-                const filter = {user_type: "delivery man"}                
+                if (tokenUser !== email) {
+                    return res.send("donst match user")
+                }
+                const filter = { user_type: "delivery man" }
                 const result = await allUsers.find(filter).toArray()
                 res.send(result)
 
@@ -94,12 +140,16 @@ async function run() {
             }
         })
 
-        app.put('/user', async (req, res) => {
+        app.put('/user', verifyToken, verifyAdmin, async (req, res) => {
             try {
-                const id = req.query.id
+                const tokenUser = req.user
                 const email = req.query.email
+                if (tokenUser !== email) {
+                    return res.send("dons't match user")
+                }
+                const id = req.query.id                
                 const data = req.body
-                console.log(id, email, data); 
+                console.log(id, email, data);
                 const filter = { _id: new ObjectId(id) };
                 const newData = {
                     $set: data
@@ -117,9 +167,13 @@ async function run() {
 
 
         // BOOKED PARCEL==============================
-        app.get('/allparcel', async (req, res) => {
-            try { 
-                // const email = req.query.email;
+        app.get('/allparcel', verifyToken, verifyAdmin, async (req, res) => {
+            try {
+                const tokenUser = req.user
+                const email = req.query.email
+                if (tokenUser !== email) {
+                    return res.send("dons't match user")
+                }
                 const result = await bookedParcel.find().toArray()
                 res.send(result)
             }
@@ -158,8 +212,13 @@ async function run() {
 
         })
 
-        app.put('/bookedparcel', async (req, res) => {
+        app.put('/bookedparcel', verifyToken, async (req, res) => {
             try {
+                const tokenUser = req.user
+                const email = req.query.email
+                if (tokenUser !== email) {
+                    return res.send("dons't match user")
+                }
                 const id = req.query.id
                 const data = req.body
                 const filter = { _id: new ObjectId(id) };
@@ -176,11 +235,16 @@ async function run() {
             }
 
         })
-        
 
 
-        app.post('/bookedparcel', async (req, res) => {
+
+        app.post('/bookedparcel', verifyToken, async (req, res) => {
             try {
+                const tokenUser = req.user
+                const email = req.query.email
+                if (tokenUser !== email) {
+                    return res.send("donst match user")
+                }
                 const data = req.body;
                 const result = await bookedParcel.insertOne(data);
                 res.send(result);
@@ -191,8 +255,13 @@ async function run() {
             }
         })
 
-        app.delete('/bookedparcel', async (req, res) => {
+        app.delete('/bookedparcel', verifyToken, async (req, res) => {
             try {
+                const tokenUser = req.user
+                const email = req.query.email
+                if (tokenUser !== email) {
+                    return res.send("dons't match user")
+                }
                 const id = req.query.id
                 const result = await bookedParcel.deleteOne({ _id: new ObjectId(id) })
                 res.send(result);
@@ -203,6 +272,26 @@ async function run() {
                 res.status(400).send('An error occurred while deleting');
             }
 
+        })
+
+        // JWT🔐🔐🔐🔐🔐🔐🔐🔐🔐🔐🔐🔐🔐🔐🔐🔐🔐🔐
+        app.post('/jwt', async (req, res) => {
+            const user = req.body
+            const token = jwt.sign(user, process.env.ACCESS_TOKEN, { expiresIn: '1h' })
+            res
+                .cookie('token', token, {
+                    httpOnly: true,
+                    secure: true,
+                    sameSite: 'none'
+                })
+                .send({ success: true })
+        })
+
+        app.post('/logout', async (req, res) => {
+
+            res
+                .clearCookie('token', { maxAge: 0 })
+                .send({ remove: true })
         })
 
 
