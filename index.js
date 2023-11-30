@@ -46,6 +46,19 @@ async function run() {
             }
         })
 
+        app.get('/allusers', async (req, res) => {
+            try {
+                const email = req.query.email                
+                const result = await allUsers.find().toArray()
+                res.send(result)
+
+            }
+            catch (err) {
+                console.error(err);
+                res.status(400).send('An error occurred while fetching');
+            }
+        })
+
         app.post('/users', async (req, res) => {
             try {
                 const data = req.body;
@@ -67,10 +80,32 @@ async function run() {
             }
         })
 
+        app.put('/user', async (req, res) => {
+            try {
+                const id = req.query.id
+                const email = req.query.email
+                const data = req.body
+                console.log(id, email, data); 
+                const filter = { _id: new ObjectId(id) };
+                const newData = {
+                    $set: data
+                };
+                const result = await allUsers.updateOne(filter, newData);
+                res.send(result);
+
+            }
+            catch (err) {
+                console.error(err);
+                res.status(400).send('An error occurred while updating');
+            }
+
+        })
+
 
         // BOOKED PARCEL==============================
         app.get('/allparcel', async (req, res) => {
-            try {                
+            try { 
+                // const email = req.query.email;
                 const result = await bookedParcel.find().toArray()
                 res.send(result)
             }
@@ -97,6 +132,7 @@ async function run() {
         app.get('/singleparcel', async (req, res) => {
             try {
                 const id = req.query.id
+                // const email = req.query.email;
                 const result = await bookedParcel.findOne({ _id: new ObjectId(id) })
                 res.send(result);
 
